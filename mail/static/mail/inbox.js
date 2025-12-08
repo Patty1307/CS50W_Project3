@@ -8,6 +8,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // By default, load the inbox
   load_mailbox('inbox');
+
+  // Sent Button for E-Mail compose
+  document.querySelector('#compose-form').onsubmit = () => {
+    // Get the data from the Form
+    const recipients = document.querySelector('#compose-recipients').value;
+    const subject = document.querySelector('#compose-subject').value;
+    const body = document.querySelector('#compose-body').value;
+    
+    // Call API and handle response
+    fetch('/emails', {
+      method: 'POST',
+      body: JSON.stringify({
+          recipients: recipients,
+          subject: subject,
+          body: body
+      })
+    })
+    .then(response => response.json())
+    .then(result => {
+      // Print result
+      console.log(result);
+    })
+    // Go to the Sent page
+    load_mailbox('sent');
+    
+    // Stop form from submitting
+      return false;
+  }
+
 });
 
 function compose_email() {
