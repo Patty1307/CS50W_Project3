@@ -10,31 +10,44 @@ document.addEventListener('DOMContentLoaded', function() {
   load_mailbox('inbox');
 
   // Sent Button for E-Mail compose
-  document.querySelector('#compose-form').onsubmit = () => {
-    // Get the data from the Form
-    const recipients = document.querySelector('#compose-recipients').value;
-    const subject = document.querySelector('#compose-subject').value;
-    const body = document.querySelector('#compose-body').value;
+  document.querySelector('#compose-form').onsubmit = async (event) => {
     
-    // Call API and handle response
-    fetch('/emails', {
+    // Stop form from Submitting
+    event.preventDefault();
+    
+    try {
+      // Get Form Data
+      const recipients = document.querySelector('#compose-recipients').value;
+      const subject = document.querySelector('#compose-subject').value;
+      const body = document.querySelector('#compose-body').value;
+
+    // API-Call
+    const response = await fetch('/emails', {
       method: 'POST',
       body: JSON.stringify({
-          recipients: recipients,
-          subject: subject,
-          body: body
+        recipients,
+        subject,
+        body
       })
-    })
-    .then(response => response.json())
-    .then(result => {
-      // Print result
-      console.log(result);
-    })
-    // Go to the Sent page
+    });
+
+    // Json parsen
+    const data = await response.json();
+
+    // Check Http status if everything is okay. Else Error handling
+    if (!response.ok) {
+      throw new Error(data.error || "Unknown error while sending email.");
+    }
+
+    console.log("Email API response:", data);
     load_mailbox('sent');
+
+    } catch (error) {
+      console.error("Error sending email", error.message);
+      showError(error.message);
+    }
     
-    // Stop form from submitting
-      return false;
+
   }
 
 });
@@ -51,12 +64,64 @@ function compose_email() {
   document.querySelector('#compose-body').value = '';
 }
 
-function load_mailbox(mailbox) {
+async function load_mailbox(mailbox) {
   
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
 
   // Show the mailbox name
-  document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+      const emailsView = document.querySelector('#emails-view');
+      emailsView.innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+
+    try {
+      // Api Call for the mails
+      const response = await fetch(`/emails/${mailbox}`);
+
+    // Json parsen
+    const data = await response.json();
+
+    // Check Http status if everything is okay. Else Error handling
+    if (!response.ok) {
+      throw new Error(data.error || "Unknown error while loading mailbox.");
+    }
+    console.log("Email API response:", data);
+
+
+
+      data.forEach(email => {
+      const element = document.createElement('div');
+      element.className = 'container-xxl p-2 mt-1 border border-light-subtle rounded hover-lift';
+
+      element.innerHTML = `
+        <div class="row g-3 align-items-center ">
+        <div class="col">
+        <div class="sender">${email.sender}</div>
+        <div class="subject">${email.subject}</div>
+        </div>
+        <div class="col">
+        <div class="timestamp">${email.timestamp}</div></div>
+        </div>
+      `;
+      emailsView.append(element);
+    });
+
+
+    } catch (error) {
+      console.error("Error laoding mailbox", error.message);
+    }   
+  }
+
+
+function showError(message) {
+  const container = document.querySelector('#compose-error');
+
+  // Delete old Error Message
+  container.innerHTML = '';
+
+  const element = document.createElement('div');
+  element.className = 'alert alert-danger mt-3';
+  element.innerText = message;
+
+  container.append(element);
 }
