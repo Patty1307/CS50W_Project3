@@ -12,19 +12,69 @@ textarea {
 }
 
 
+@keyframes hide {
+    0% {
+        opacity: 1;
+        padding: 10px;
+        margin-bottom: 5px;
+        line-height: 100%;
+        height: 100%;
+        
+    }
+
+    100% {
+        opacity: 0;
+        padding: 0px;
+        line-height: 0%;
+        height: 0%;
+        margin-bottom: 0px;
+    }
+}
+
+.MailDiv {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    cursor: pointer;
+    animation-name: hide;
+    animation-duration: 0.3s;
+    animation-fill-mode: forwards;
+    animation-play-state: paused;
+    padding: 10px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+
+.SenderSubjectDiv {
+    flex-grow: 1;
+    min-width: 150px;
+}
+
 .sender {
   font-weight: bold;
-  max-width: auto;
   margin-right: 10px;
 }
 
+
 .subject {
-  margin-right: 10px;
-  min-width: 30px;   /* Wichtig, damit das Umbruchverhalten korrekt funktioniert */
+    white-space: nowrap;          
+    overflow: hidden;              
+    text-overflow: ellipsis;       
+    display: block;                
+}
+
+.timeStampDiv {
+    flex-grow: 0;
+    display: flex;
 }
 
 .timestamp {
   color: gray;
-  white-space: nowrap; /* Timestamp soll nicht umbrechen */
-  justify-self: right;
+  white-space: nowrap;
+}
+
+.archiv-icon {
+    width: 20px;
+    margin-left: 5px;
 }

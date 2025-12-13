@@ -56,6 +56,7 @@ function compose_email() {
 
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#mail-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
 
   // Clear out composition fields
@@ -69,6 +70,7 @@ async function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#mail-view').style.display = 'none';
 
   // Show the mailbox name
       const emailsView = document.querySelector('#emails-view');
@@ -87,22 +89,55 @@ async function load_mailbox(mailbox) {
     }
     console.log("Email API response:", data);
 
-
-
-      data.forEach(email => {
+      
+    // Creating for each email an div
+    data.forEach(email => {
       const element = document.createElement('div');
-      element.className = 'container-xxl p-2 mt-1 border border-light-subtle rounded hover-lift';
+      element.className = 'MailDiv rounded hover-lift';
+      
+      // Set to every div the id, so we can contact the specific div for each mail (Display none)
+      element.id = "email-" + email.id
+      
+      // Change color of div either its read or unread
+      if (email.read) {
+        element.style= 'background-color: lightgray;';
+      } else {
+        element.style = 'background-color: white; border-style: solid; border-color: #0d6efd;';
+      }   
+        //Creating the html elements
+        element.innerHTML = `
+          <div class="SenderSubjectDiv">
+            <div class="sender">${email.sender}</div>
+            <div class="subject text-truncate">${email.subject}</div>
+          </div>
+          <div class="timeStampDiv">
+            
+              <div class="timestamp">${email.timestamp}</div>
+              <div class="archiv-icon">
 
-      element.innerHTML = `
-        <div class="row g-3 align-items-center ">
-        <div class="col">
-        <div class="sender">${email.sender}</div>
-        <div class="subject">${email.subject}</div>
-        </div>
-        <div class="col">
-        <div class="timestamp">${email.timestamp}</div></div>
-        </div>
-      `;
+                <svg xmlns="http://www.w3.org/2000/svg" class="bi" viewBox="0 0 16 16" aria-hidden="true" id="archiv-icon" >
+                  <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                </svg>
+              
+            </div>
+          </div>
+        `;
+        // Add event listener to open the mails
+        element.addEventListener('click', () => {
+        open_email(email.id)
+      })
+      // If the mailbox ist sent we dont need the archiv icon
+      if (mailbox === "sent") {
+        element.querySelector('#archiv-icon').style.display = 'none';
+      }
+      // Add the event listener for the archivicon
+      const archiv_icon = element.querySelector('#archiv-icon');
+      archiv_icon.addEventListener('click', (event) => {
+        // This is important so the icon can also be clickable. Either way the click event to open an email triggers
+        event.stopPropagation();
+        toggle_archiv(email.id, email.archived);
+      });
+
       emailsView.append(element);
     });
 
@@ -112,6 +147,61 @@ async function load_mailbox(mailbox) {
     }   
   }
 
+async function open_email(email_id) {
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#mail-view').style.display = 'block';
+
+  const mailView = document.querySelector('#mail-view');
+
+  mailView.innerHTML = '';
+
+  try {
+
+    const response = await fetch(`/emails/${email_id}`);
+    const email = await response.json();
+
+    if (!response.ok) {
+      throw new Error(email.error || "Unknown error while loading mail");
+    }
+
+    console.log(email);
+
+    const element = document.createElement('div');
+    element.innerHTML = `
+      <div><span style="font-weight: bold;">From: </span> <span>${email.sender}</span></div>
+      <div><span style="font-weight: bold;">To: </span> <span>${email.recipients}</span></div>
+      <div><span style="font-weight: bold;">Subject : </span> <span>${email.subject}</span></div>
+      <div><span style="font-weight: bold;">Timestamp : </span> <span>${email.timestamp}</span></div>
+      <button class="btn btn-sm btn-outline-primary" id="reply">Reply</button>
+      <hr>
+      <div>${email.body}</div>
+    `
+    mailView.append(element);
+
+    if (!email.read) {
+      setRead(email.id)
+    }
+  } catch (error) {
+    console.error("Error loading mail", error.message);
+  }
+}
+
+
+async function setRead(emailID) {
+
+  try {
+      const response = await fetch(`/emails/${emailID}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      read: true
+    })
+  })
+  console.log("Email set to read")
+  } catch(error) {
+    console.error("Could not set Email to read");
+  }
+}
 
 function showError(message) {
   const container = document.querySelector('#compose-error');
@@ -124,4 +214,35 @@ function showError(message) {
   element.innerText = message;
 
   container.append(element);
+}
+
+async function toggle_archiv(email_id, archived) {
+
+  try {
+
+    const response = await fetch(`/emails/${email_id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        archived: !archived
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error("Unknown error while archiving mail.");
+    }
+
+    
+    const element = document.querySelector(`#email-${email_id}`);
+    // remove icon seperate. Else the animation has a bug. It doenst shrink the container flawless if the icon is there
+    element.querySelector('#archiv-icon').remove();
+
+    element.style.animationPlayState = 'running';
+    element.addEventListener('animationend', () => {
+      element.remove();
+    })
+
+  } catch (error) {
+    console.error("Error archiving Mail", error.message);
+
+  }
 }
