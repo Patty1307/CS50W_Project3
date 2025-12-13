@@ -126,14 +126,14 @@ async function load_mailbox(mailbox) {
         element.addEventListener('click', () => {
         open_email(email.id)
       })
-      // If the mailbox ist sent we dont need the archiv icon
+      // If the mailbox is sent, we dont need the archiv icon
       if (mailbox === "sent") {
         element.querySelector('#archiv-icon').style.display = 'none';
       }
-      // Add the event listener for the archivicon
+      // Add the event listener for the archiv-icon
       const archiv_icon = element.querySelector('#archiv-icon');
       archiv_icon.addEventListener('click', (event) => {
-        // This is important so the icon can also be clickable. Either way the click event to open an email triggers
+        // This is important so the icon is also be clickable. Either way the click event to open an email triggers
         event.stopPropagation();
         toggle_archiv(email.id, email.archived);
       });
@@ -148,16 +148,19 @@ async function load_mailbox(mailbox) {
   }
 
 async function open_email(email_id) {
+  
+  // Show the correct view
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'none';
   document.querySelector('#mail-view').style.display = 'block';
 
   const mailView = document.querySelector('#mail-view');
 
+  // clear the HTML of the last opend Mail. Either way the Text stacks
   mailView.innerHTML = '';
 
   try {
-
+    // API call to get the data From an specific email
     const response = await fetch(`/emails/${email_id}`);
     const email = await response.json();
 
@@ -166,7 +169,7 @@ async function open_email(email_id) {
     }
 
     console.log(email);
-
+    // HTML element to display the email
     const element = document.createElement('div');
     element.innerHTML = `
       <div><span style="font-weight: bold;">From: </span> <span>${email.sender}</span></div>
@@ -179,9 +182,14 @@ async function open_email(email_id) {
     `
     mailView.append(element);
 
+    // Call function to set the email on read
     if (!email.read) {
       setRead(email.id)
     }
+    
+    // Add Clickevent to reply
+    element.querySelector('#reply').addEventListener('click', () => reply(email));
+
   } catch (error) {
     console.error("Error loading mail", error.message);
   }
@@ -190,6 +198,7 @@ async function open_email(email_id) {
 
 async function setRead(emailID) {
 
+  // Set an email to read
   try {
       const response = await fetch(`/emails/${emailID}`, {
     method: 'PUT',
@@ -245,4 +254,29 @@ async function toggle_archiv(email_id, archived) {
     console.error("Error archiving Mail", error.message);
 
   }
+}
+
+function reply(email) {
+  
+  // open the compose view and fill the fields with the data from the email
+  compose_email()
+
+  const compose = document.querySelector('#compose-view');
+
+  compose.querySelector('#compose-recipients').value = email.sender;
+   
+  const subject = email.subject
+  const compose_subject = compose.querySelector('#compose-subject')
+
+  // Add a Re:
+  if (!subject.startsWith("Re:")) {
+    compose_subject.value = "Re: " + subject;
+  } else {
+    compose_subject.value = subject;
+  }
+
+  compose.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote:\n\n${email.body}`
+
+
+
 }
