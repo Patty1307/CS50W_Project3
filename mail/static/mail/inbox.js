@@ -107,7 +107,7 @@ async function load_mailbox(mailbox) {
         //Creating the html elements
         element.innerHTML = `
           <div class="SenderSubjectDiv">
-            <div class="sender">${email.sender}</div>
+            <div class="sender" id="Recepients_Or_Sender">${email.sender}</div>
             <div class="subject text-truncate">${email.subject}</div>
           </div>
           <div class="timeStampDiv">
@@ -126,9 +126,10 @@ async function load_mailbox(mailbox) {
         element.addEventListener('click', () => {
         open_email(email.id)
       })
-      // If the mailbox is sent, we dont need the archiv icon
+      // If the mailbox is sent, we dont need the archiv icon and show the recepients
       if (mailbox === "sent") {
         element.querySelector('#archiv-icon').style.display = 'none';
+        element.querySelector('#Recepients_Or_Sender').innerHTML = email.recipients;
       }
       // Add the event listener for the archiv-icon
       const archiv_icon = element.querySelector('#archiv-icon');
