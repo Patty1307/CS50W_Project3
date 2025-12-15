@@ -195,7 +195,6 @@ async function open_email(email_id) {
   }
 }
 
-
 async function setRead(emailID) {
 
   // Set an email to read
