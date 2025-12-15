@@ -77,3 +77,7 @@ textarea {
     width: 20px;
     margin-left: 5px;
 }
+
+.mail-body {
+  white-space: pre-wrap;
+}

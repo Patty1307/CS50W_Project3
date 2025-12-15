@@ -178,7 +178,7 @@ async function open_email(email_id) {
       <div><span style="font-weight: bold;">Timestamp : </span> <span>${email.timestamp}</span></div>
       <button class="btn btn-sm btn-outline-primary" id="reply">Reply</button>
       <hr>
-      <div>${email.body}</div>
+      <div class="mail-body">${email.body}</div>
     `
     mailView.append(element);
 
